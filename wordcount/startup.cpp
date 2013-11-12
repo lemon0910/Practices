@@ -1,5 +1,12 @@
 #include "LibExecutive.h"
-#include "CLMyMessage.h"
+#include "MessageClass.h"
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <cstdio>
+#include <unistd.h>
+#include <cstdlib>
+using namespace std;
 
 class CLWordObserver : public CLMessageObserver
 {
@@ -10,9 +17,10 @@ public:
 	{
 		for(int i = 0; i < m_processNumber; ++i)
 			if(m_childprocess[i] != NULL)
+            {
 				m_childprocess[i]->WaitForDeath();
-
-		delete m_childprocess[i];
+            }
+        delete[] m_childprocess;
 	}
 	
 	void getDirectory(string dirname)
@@ -29,14 +37,18 @@ public:
 		for(int i = 0; i < m_processNumber; ++i)
 			m_childprocess[i] = NULL;
 
-		pMessageLoop->Register(CHILD_FINISH_MESSAGE_ID, (CallBackForMessageLoop)(&CLFatherWordCountObserver::On_Child_Work_Finish));
+		pMessageLoop->Register(CHILD_WORK_FINISH_MESSAGE_ID, (CallBackForMessageLoop)(&CLWordObserver::On_Child_Work_Finish));
 
 		for(int i = 0; i < m_processNumber; ++i)
 		{
 			stringstream index;
 			index << i;
 			string directory = m_dir[i];
-			string cmdForChild = string("./test/a.out") + " " + directory + " " + index;
+			string cmdForChild = "./test/a.out";
+            cmdForChild += " ";
+            cmdForChild += directory;
+            cmdForChild +=  " ";
+            cmdForChild += index.str();
 			m_childprocess[i] = new CLProcess(new CLProcessFunctionForExec, true);
 			if(!((m_childprocess[i]->Run((void*)(cmdForChild.c_str()))).IsSuccess()))
 			{
@@ -52,7 +64,7 @@ public:
 	{
 		CLWorkFinishMessage *pFinish = dynamic_cast<CLWorkFinishMessage*>(pMessage);
 		string path = pFinish->m_filename;
-		FILE *fp = fopen(path, "r");
+		FILE *fp = fopen(path.c_str(), "r");
 		char buffer[101];
 		string content;
 		while(true)
@@ -84,15 +96,18 @@ public:
 
 		fclose(fp);		
 		m_quitNumber--;
-		if(0 == m_quitNumber)
+	    unlink(pFinish->m_filename.c_str());
+        if(0 == m_quitNumber)
 		{
 			map<string, int>::iterator it;
 			for(it = m_wordMap.begin(); it != m_wordMap.end(); ++it)
 			{
 			cout << it->first << "  " << it->second << endl;
 			}
-			exit(0);
-		}
+
+            return CLStatus(QUIT_MESSAGE_LOOP, 0);
+        }
+
 
 		return CLStatus(0, 0);
 	}
@@ -126,7 +141,8 @@ int main(int argc, char *argv[])
 	}
 
 	CLNonThreadForMsgLoop mainThread(myObserver, "mainThread", EXECUTIVE_BETWEEN_PROCESS_USE_PIPE_QUEUE);
-	mainThread.run(0);
+    mainThread.RegisterDeserializer(CHILD_WORK_FINISH_MESSAGE_ID, new CLWorkFinishMessageDeserializer);
+	mainThread.Run(0);
 
 	if(!CLLibExecutiveInitializer::Destroy().IsSuccess())
 	{

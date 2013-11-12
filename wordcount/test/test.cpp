@@ -1,79 +1,22 @@
 #include "LibExecutive.h"
-
-/*class CLChildObserver : public CLMessageObserver
-{
-public:
-	CLChildObserver(){}
-	~CLChildObserver(){}
-	void setFilename(string filename, string dirname)
-	{
-		m_filename = filename;
-		m_dirname = dirname;
-	}
-
-	virtual CLStatus Initialize(CLMessageLoopManager *pMessageLoop,void* pContext)
-	{
-		pMessageLoop->Register(CHILD_WORK_FINISH_MESSAGE_ID, (CallBackForMessageLoop)(&CLChildObserver::On_Word_Process));
-		
-		CLSharedExecutiveCommunicationByNamedPipe *pSender = new CLSharedExecutiveCommunicationByNamedPipe("mainThread");
-		pSender->RegisterSerializer(CHILD_WORK_FINISH_MESSAGE_ID, new CLWorkFinishMessageSerializer);
-		CLExecutiveNameServer::GetInstance()->Register("mainThread", pSender);
-		//CLExecutiveNameServer::PostExecutiveMessage("father_pipe",pChildInitMsg);
-        
-		return CLStatus(0,0);
-	}
-
-	CLStatus On_Word_Process(CLMessage *pm)
-	{
-		CLWorkFinishMessage *pMessage = dynamic_cast<CLWorkFinishMessage*>(pm);
-		if(0 == pMessage)
-			return CLStatus(0,0);
-
-		CLWordCount wordCount(m_filename);
-		wordCount.process();
-		
-		return CLStatus(0,0);
-	}
-
-private:
-	string m_filename;
-	string m_dirname;
-};
-
-int main(int argc, char *argv[])
-{
-	if(3 != argc)
-	{
-		cerr << "usage : ./a.out filename dirname" << endl;
-		exit(-1);
-	}
-
-	if(!CLLibExecutiveInitializer::Initialize().IsSuccess())
-	{
-		cerr << "initialize error" << endl;
-		return 0;
-	}
-
-
-	CLChildObserver *myObserver = new CLChildObserver;
-	myObserver->setFilename(argv[1], argv[2]);
-
-	CLNonThreadForMsgLoop mainThread(myObserver, "mainThread", EXECUTIVE_BETWEEN_PROCESS_USE_PIPE_QUEUE);
-	mainThread.run(0);
-
-	if(!CLLibExecutiveInitializer::Destroy().IsSuccess())
-	{
-		cerr << "destroy error" << endl;
-	}
-
-	return 0;
-}
-*/
+#include "../MessageClass.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <dirent.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <string>
+#include <fstream>
+using namespace std;
 
 class CLWordCount
 {
 public:
-	CLWordCount(string dirname, filename)
+	CLWordCount(string dirname, string filename)
 	{
 		m_dirname = dirname;
 		m_filename = filename;
@@ -97,18 +40,21 @@ public:
 				mystr += ch;
 			else
 			{
-				map<string, int>::iterator it;
-				if(m_map.find(mystr) != m_map.end())
-				{
-					int temp = m_map[mystr];
-					m_map[mystr] = temp + 1;
-				}
-				else
-				{
-					m_map[mystr] = 1;
-				}
+                if(mystr != "")
+                {
+                    map<string, int>::iterator it;
+                    if(m_map.find(mystr) != m_map.end())
+                    {
+                        int temp = m_map[mystr];
+                        m_map[mystr] = temp + 1;
+                    }
+                    else
+                    {
+                        m_map[mystr] = 1;
+                    }
 
-				mystr = "";
+                    mystr = "";
+                }
 			}
 		}
 	}
@@ -124,18 +70,18 @@ public:
 		if(lstat(dirname.c_str(), &statbuf) < 0)
 		{
 			perror("lstat error : ");
-			return -1;
+			return;
 		}
 		if(0 == S_ISDIR(statbuf.st_mode))
 		{
 			perror("the file is not a directory");
-			return -1;
+			return;
 		}
 
 		if(NULL == (dp = opendir(dirname.c_str())))
 		{
 			perror("opendir error : ");
-			return -1;
+			return;
 		}
 
 		while((dirp = readdir(dp)) != NULL)
@@ -143,10 +89,10 @@ public:
 			if(strcmp(dirp->d_name, ".") == 0 || strcmp(dirp->d_name, "..") == 0)
 				continue;
 			string entry = dirname + '/' + dirp->d_name;
-			if(lstat(entry, &statbuf) < 0)
+			if(lstat(entry.c_str(), &statbuf) < 0)
 			{
 				perror("lstat error : ");
-				return -1;
+				return;
 			}
 			if(S_ISDIR(statbuf.st_mode))
 			{
@@ -163,20 +109,20 @@ public:
 	{
 		dirWordCount(m_dirname);
 		fstream fs;
-		fs.open(m_filename, fstream::in | fstream::out | fstream::app);
+		fs.open(m_filename.c_str(), fstream::in | fstream::out | fstream::app);
 		map<string, int>::iterator it;
 		for(it = m_map.begin(); it != m_map.end(); ++it)
 		{
-			sstream content;
+			stringstream content;
 			content << it->first << " " << it->second << '\n';
-			fs << content.c_str();
+			fs << content.str();
 		}
 		fs.close();
 
-		CLSharedExecutiveCommunicationByNamedPipe *pSender = new CLSharedExecutiveCommunicationByNamedPipe("mainThread");
-		pSender->RegisterSerializer(CHILD_WORK_FINISH_MESSAGE_ID, new CLWorkFinishMessageSerializer);
-		CLExecutiveNameServer::GetInstance()->Register("mainThread", pSender);
-		CLExecutiveNameServer::PostExecutiveMessage("mainThread", CLWorkFinishMessage);
+	    CLWorkFinishMessage *pMessage = new CLWorkFinishMessage;
+        pMessage->m_filename = "./test/" + m_filename;
+		CLExecutiveNameServer::PostExecutiveMessage("mainThread", pMessage);
+        CLExecutiveNameServer::GetInstance()->ReleaseCommunicationPtr("mainThread");
 	}
 
 private:
@@ -192,16 +138,21 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	CLWordCount wordCount(argv[1], argv[2]);
-	wordCount.process();
-
+    if(!CLLibExecutiveInitializer::Initialize().IsSuccess())
+    {
+        cout << "Initialize error" << endl;
+        return 0;
+    }
 	CLSharedExecutiveCommunicationByNamedPipe *pSender = new CLSharedExecutiveCommunicationByNamedPipe("mainThread");
 	pSender->RegisterSerializer(CHILD_WORK_FINISH_MESSAGE_ID, new CLWorkFinishMessageSerializer);
 	CLExecutiveNameServer::GetInstance()->Register("mainThread", pSender);
-	CLMessage *pMessage = new CLWorkFinishMessage;
-	pMessage->m_filename = argv[2];
-	CLExecutiveNameServer::PostExecutiveMessage("mainThread", pMessage);
+	CLWordCount wordCount(argv[1], argv[2]);
+	wordCount.process();
 
+    if(!CLLibExecutiveInitializer::Destroy().IsSuccess())
+    {
+        cout << "Destroy error" << endl;
+    }
 	return 0;
 }
 
