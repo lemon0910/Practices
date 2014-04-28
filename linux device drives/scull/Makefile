@@ -1,6 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 	obj-m := sculls.o
-	sculls-objs := scull.o scull_set.o
+	sculls-objs := scull.o scull_file.o
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)

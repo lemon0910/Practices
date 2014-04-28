@@ -3,7 +3,7 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <asm/uaccess.h>
-#include "scull.h"
+#include "scull_file.h"
 
 extern int scull_major;
 extern int scull_minor;
