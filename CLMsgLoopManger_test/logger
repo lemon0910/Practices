@@ -1,8 +1,0 @@
-In CLMutexByRecordLocking::Lock(), open error	Error code: 13
-In CLMutex::Lock(), Lock error	Error code: 0
-In CLMutexByRecordLockingAndPThread::Lock(), m_ProcessMutex.Lock error	Error code: 0
-In CLMutex::Lock(), Lock error	Error code: 0
-In CLCriticalSection::CLCriticalSection(), m_pMutex->Lock error	Error code: 0
-In CLCriticalSection::CLCriticalSection(), m_pMutex->Lock error	Error code: 0
-In CLLibExecutiveInitializer::Initialize(), CLSharedMutexAllocator::Create error	Error code: 0
-CLLibExecutiveInitializer initialize error	Error code: -1
