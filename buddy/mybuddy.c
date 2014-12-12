@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include "mybuddy.h"
 
 struct mybuddy
 {
@@ -124,7 +125,7 @@ void mybuddy_free(struct mybuddy* self, int offset)
     }
 }
 
-int buddy2_size(struct buddy2* self, int offset) {
+int mybuddy_size(struct mybuddy* self, int offset) {
   unsigned node_size, index = 0;
 
   assert(self && offset >= 0 && offset < self->size);
@@ -136,18 +137,18 @@ int buddy2_size(struct buddy2* self, int offset) {
   return node_size;
 }
 
-void buddy2_dump(struct buddy2* self) {
+void mybuddy_dump(struct mybuddy* self) {
   char canvas[65];
   int i,j;
   unsigned node_size, offset;
 
   if (self == NULL) {
-    printf("buddy2_dump: (struct buddy2*)self == NULL");
+    printf("mybuddy_dump: (struct mybuddy*)self == NULL");
     return;
   }
 
   if (self->size > 64) {
-    printf("buddy2_dump: (struct buddy2*)self is too big to dump");
+    printf("mybuddy_dump: (struct mybuddy*)self is too big to dump");
     return;
   }
 
