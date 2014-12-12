@@ -53,14 +53,14 @@ struct Block
 
     int bottom() const
     {
-        const static int delta = {0, 0, 0, 1, 1, };
+        const static int delta[] = {0, 0, 0, 1, 1, };
         assert(shape != Shape::kInvalid);
         return top + delta[static_cast<int>(shape)];
     }
 
     int right() const
     {
-        const static int delta = {0, 0, 1, 0, 1,};
+        const static int delta[] = {0, 0, 1, 0, 1,};
         assert(shape != Shape::kInvalid);
         return left + delta[static_cast<int>(shape)];
     }
@@ -77,7 +77,7 @@ struct Mask
 
     bool operator==(const Mask& rhs) const
     {
-        return memcmp(board_, rhs.board_, sizeof board_ 0;
+        return memcmp(board_, rhs.board_, sizeof board_) == 0;
     }
 
     size_t hashValue() const
@@ -92,7 +92,7 @@ struct Mask
 		{
 			for(int j = 0; j < kColumns; ++j)
 			{
-				printf(" %c", board[i][j] + '0');
+				printf(" %c", board_[i][j] + '0');
 			}
 			printf("\n");
 		}
@@ -156,6 +156,7 @@ struct State
 	Mask toMask() const
 	{
 		Mask m;
+        //m.print();
 		for(int i = 0; i < kBlocks; ++i)
 		{
 			Block b = blocks_[i];
@@ -237,13 +238,16 @@ int main()
 	initial.blocks_[8] = Block(Shape::kSingle, 0, 4);
 	initial.blocks_[9] = Block(Shape::kSingle, 3, 4);
 	
-	queue::push_back(initial);
+    //initial.toMask().print();
+	queue.push_back(initial);
 	seen.insert(initial.toMask());
 	
 	while(!queue.empty())
 	{
 		const State curr = queue.front();
 		queue.pop_front();
+        //curr.toMask().print();
+        //std::cout << "-1, the size is " << queue.size() << std::endl;
 		
 		if(curr.isSolved())
 		{
@@ -258,8 +262,13 @@ int main()
 		
 		curr.move([&seen, &queue](const State& next){
 			auto result = seen.insert(next.toMask());
+            //next.toMask().print();
 			if(result.second)
+            {
+                //std::cout << "+1, the size is " << seen.size() << std::endl;
 				queue.push_back(next);
+                //std::cout << "+1, the size is " << queue.size() << std::endl;
+            }
 				});
 		
 	}
