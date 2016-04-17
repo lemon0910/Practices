@@ -111,6 +111,7 @@ int _pool_add_task(pool *p, task *t)
         temp->next = t;
     }else{
         p->task_queue_head = t;
+        pthread_cond_signal(&p->queue_cond);
     }
     p->task_queue_size++;
     pthread_mutex_unlock(&p->queue_mutex);
