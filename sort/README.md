@@ -1,3 +1,3 @@
 ### introductions
 
-My implement about some sort algorithms.
+不同排序算法的实现：冒泡排序，插入排序，合并排序，快速排序，选择排序和希尔排序。

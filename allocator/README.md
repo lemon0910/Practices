@@ -1,3 +1,3 @@
-### introductions
+## introductions
 
-It's an alloctor for STL container. I write it for learing STL.
+阅读《STL源码剖析》的时候实现的一个容器的内存分配器。功能比较简单，但能表明容器的内存分配器的实现。

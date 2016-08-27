@@ -1,3 +1,3 @@
 ### introductions
 
-There is a README.md in each directory.
+这是我平时写得一些小程序，有些是老师给的，有些是自己从网上找的，有的是自己感兴趣的，每个文件夹下面都有README.md，会对每一个程序做具体的解释。
